@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐄 Prediksi Produksi Susu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<div class="container mt-4 mb-5">
+    <h2 class="text-center mb-4">🐄 Prediksi Produksi Susu</h2>
+
+    {% if DATA_PATH %}
+    <div class="alert alert-info text-center">
+        Dataset aktif: <strong>{{ DATA_PATH.split('/')[-1] }}</strong><br>
+        📊 Model akan dilatih berdasarkan data 14 hari sebelum tanggal yang dipilih.
+    </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+        {{ messages[0] }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+    {% if tanggal_valid %}
+    <div class="alert alert-info mt-3">
+        <strong>🗓️ Tanggal yang dapat diprediksi:</strong>
+        <p>{{ tanggal_valid[0] }} &nbsp; sampai dengan &nbsp; {{ tanggal_valid[-1] }}</p>
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <form action="/predict" method="post">
+        <div class="mb-3">
+            <label for="tanggal" class="form-label">🗓️ Tanggal Prediksi</label>
+            <select name="tanggal_pemerahan" class="form-control" id="tanggal" required>
+                <option value="">-- Pilih Tanggal --</option>
+                {% for tgl in tanggal_valid %}
+                <option value="{{ tgl }}">{{ tgl }}</option>
+                {% endfor %}
+            </select>
+            <div id="info-latih" class="form-text text-muted mt-1"></div>
+        </div>
+
+        <div class="mb-3">
+            <label for="kode_sapi" class="form-label">🐄 Kode Sapi</label>
+            <select class="form-select" name="kode_sapi" id="kode_sapi" required>
+                <option value="">-- Pilih Kode Sapi --</option>
+                {% for kode in kode_sapi_list %}
+                    <option value="{{ kode }}">{{ kode }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="umur" class="form-label">🎂 Umur Sapi (tahun)</label>
+            <input type="number" step="0.1" name="umur" id="umur" class="form-control" placeholder="Misal: 3.5" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="berat" class="form-label">⚖️ Berat Badan (kg)</label>
+            <input type="number" step="0.1" name="berat" id="berat" class="form-control" placeholder="Misal: 450" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="pakan" class="form-label">🥬 Jumlah Pakan (kg)</label>
+            <input type="number" step="0.1" class="form-control" name="pakan" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="suhu" class="form-label">🌡️ Suhu Lingkungan (°C)</label>
+            <input type="number" step="0.1" class="form-control" name="suhu" required>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+            <button type="submit" class="btn btn-success">🔍 Prediksi</button>
+            <a href="/analisis" class="btn btn-outline-secondary">📊 Lihat Analisis</a>
+            <a href="/upload" class="btn btn-outline-primary">📁 Upload Dataset Baru</a>
+            <a href="/preview" class="btn btn-outline-info">🔍 Lihat Data Preprocessing</a>
+        </div>
+        
+    </form>
+
+    {% if hasil %}
+    <div class="alert alert-success text-center mt-4">
+        ✅ Prediksi Produksi Susu: <strong>{{ hasil }} liter</strong>
+    </div>
+    {% if rekomendasi %}
+    <div class="mt-4">
+        <h5>📌 Rekomendasi untuk Produksi Optimal:</h5>
+        <ul class="list-group mt-2">
+            {% for r in rekomendasi %}
+            <li class="list-group-item">{{ r }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const kodeInput = document.getElementById('kode_sapi');
+    const umurInput = document.getElementById('umur');
+    const beratInput = document.getElementById('berat');
+    const tanggalSelect = document.getElementById('tanggal');
+    const infoLatih = document.getElementById('info-latih');
+
+    // Fungsi reset field umur & berat
+    function resetUmurBerat() {
+        umurInput.value = '';
+        beratInput.value = '';
+        umurInput.classList.remove('is-invalid');
+        beratInput.classList.remove('is-invalid');
+    }
+
+    // Autofill umur dan berat dari server
+    kodeInput.addEventListener('change', function () {
+        const kode = this.value;
+        if (!kode) {
+            resetUmurBerat();
+            return;
+        }
+
+        fetch('/get_sapi_info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kode_sapi: kode })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error("Data sapi tidak ditemukan");
+            return res.json();
+        })
+        .then(data => {
+            if (data && (data.umur !== undefined || data.berat !== undefined)) {
+                umurInput.value = data.umur ? Number(data.umur) : '';
+                beratInput.value = data.berat ? Number(data.berat) : '';
+                umurInput.classList.remove('is-invalid');
+                beratInput.classList.remove('is-invalid');
+            } else {
+                resetUmurBerat();
+                umurInput.classList.add('is-invalid');
+                beratInput.classList.add('is-invalid');
+            }
+        })
+        .catch(err => {
+            console.error('❌ Gagal mengambil data sapi:', err);
+            resetUmurBerat();
+            umurInput.classList.add('is-invalid');
+            beratInput.classList.add('is-invalid');
+        });
+    });
+
+    // Informasi pelatihan berdasarkan tanggal
+    tanggalSelect.addEventListener('change', function () {
+        const selected = this.value;
+        infoLatih.textContent = selected
+            ? `🔄 Data latih akan diambil dari 14 hari sebelum ${selected}`
+            : '';
+    });
+});
+</script>
+
+</body>
+</html>

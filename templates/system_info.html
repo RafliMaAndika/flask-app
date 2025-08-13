@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Informasi Sistem</title>
+</head>
+<body>
+    <h2>Informasi Sistem</h2>
+    <table border="1" cellpadding="5">
+        {% for key, value in system_data.items() %}
+        <tr>
+            <th>{{ key }}</th>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="{{ url_for('index') }}">⬅ Kembali</a>
+</body>
+</html>

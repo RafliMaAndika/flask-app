@@ -1,0 +1,35 @@
+<!-- templates/preview.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Preview Preprocessing</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container py-4">
+  <h2>Preview Data Setelah Preprocessing</h2>
+
+  {% if steps %}
+    <div class="card mb-3">
+      <div class="card-header">Tahapan Preprocessing</div>
+      <div class="card-body">
+        <ol>
+        {% for s in steps %}
+          <li>{{ s }}</li>
+        {% endfor %}
+        </ol>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if tables %}
+    <div class="table-responsive">
+      {{ tables | safe }}
+    </div>
+  {% else %}
+    <div class="alert alert-info">Belum ada data untuk ditampilkan.</div>
+  {% endif %}
+
+  <a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Kembali</a>
+</body>
+</html>

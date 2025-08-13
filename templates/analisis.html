@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📈 Analisis Produksi Susu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to right, #e0f7fa, #f9fbe7);
+            font-family: 'Segoe UI', sans-serif;
+            padding: 40px 15px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            max-width: 1100px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        h2 {
+            color: #2e7d32;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .table {
+            font-size: 14px;
+        }
+
+        .table thead {
+            background-color: #e8f5e9;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f1f8e9;
+            transition: background-color 0.2s;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .table thead { display: none; }
+            .table, .table tbody, .table tr, .table td {
+                display: block;
+                width: 100%;
+            }
+
+            .table tr {
+                margin-bottom: 15px;
+                border-bottom: 2px solid #eee;
+            }
+
+            .table td {
+                text-align: right;
+                padding-left: 50%;
+                position: relative;
+            }
+
+            .table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 15px;
+                width: 45%;
+                padding-left: 15px;
+                font-weight: bold;
+                text-align: left;
+                color: #555;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>📊 Analisis Data Produksi Susu</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="alert alert-info text-center">{{ messages[0] }}</div>
+    {% endif %}
+    {% endwith %}
+
+    {% if riwayat %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Kode Sapi</th>
+                        <th>Pakan (kg)</th>
+                        <th>Suhu (°C)</th>
+                        <th>Umur (tahun)</th>
+                        <th>Berat Badan (kg)</th>
+                        <th>Produksi Susu (liter)</th>
+                        <th>Rekomendasi</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in riwayat %}
+                    <tr>
+                        <td data-label="Tanggal">{{ r['Tanggal Pemerahan'] }}</td>
+                        <td data-label="Kode Sapi">{{ r['Kode Sapi'] }}</td>
+                        <td data-label="Pakan (kg)">{{ r['Jumlah Pakan'] }}</td>
+                        <td data-label="Suhu (°C)">{{ r['Suhu'] }}</td>
+                        <td data-label="Umur">{{ r['Umur'] }}</td>
+                        <td data-label="Berat Badan">{{ r['Berat Badan'] }}</td>
+                        <td data-label="Produksi Susu">{{ r['Produksi Susu'] }}</td>
+                        <td data-label="Rekomendasi">
+                            <button class="btn btn-sm btn-success" data-bs-toggle="collapse" data-bs-target="#detail{{ loop.index }}">Details</button>
+                        </td>
+                        <td data-label="Aksi">
+                            <form method="POST" action="{{ url_for('hapus', index=loop.index0) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?');">
+                                <button class="btn btn-sm btn-danger" type="submit">Hapus</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="detail{{ loop.index }}">
+                        <td colspan="9" class="bg-light">
+                            <strong>Rekomendasi:</strong>
+                            <ul class="mt-2 mb-2">
+                                {% for item in r['Rekomendasi'].split(' | ') %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">📥 Belum ada data riwayat yang tersedia.</div>
+    {% endif %}
+
+    {% if tanggal_valid_prediksi %}
+        <div class="alert alert-success text-center mt-4">
+            <strong>Tanggal yang dapat diprediksi:</strong>
+            <ul class="list-unstyled mb-0">
+                {% for tgl in tanggal_valid_prediksi %}
+                    <li>📅 {{ tgl }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">⬅️ Kembali ke Prediksi</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
